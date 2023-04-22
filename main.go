@@ -6,9 +6,57 @@ import (
 	"unsafe"
 )
 
+// TO FINISH
+// USE 0 as iso value to divide marching thing by
+// need lang parser
+
 type WindowSize struct {
 	width  int32
 	height int32
+}
+
+type QuadPix struct {
+	ul float64
+	ur float64
+	ll float64
+	lr float64
+}
+
+type vectorF64 struct {
+	x float64
+	y float64
+}
+
+type vectorI64 struct {
+	x int64
+	y int64
+}
+
+type vectorI struct {
+	x int
+	y int
+}
+
+type graphobj struct {
+	scale_factor          float64
+	center_point_offset_x float64
+}
+
+func convert_pix_point_to_graph_pix_point(window WindowSize, graph graphobj, vec vectorI) vectorI {
+	var window_mid_w int
+	window_mid_w = int(window.width) / 2
+
+	var window_mid_h int
+	window_mid_h = int(window.height) / 2
+
+	tx := vec.x
+	ty := vec.y
+
+	tx = tx - window_mid_w
+	ty = -1 * (ty - window_mid_h)
+
+	return vectorI{tx, ty}
+
 }
 
 func PixelSet(pixarray []byte, pitch int, x int, y int, r, g, b, a byte) {
@@ -54,13 +102,22 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	graph := graphobj{1, 0}
 
 	for true {
-		//for u := 0; u < int(MAIN_WINDOW_SIZE.width); u++ {
-		//	for v := 0; v < int(MAIN_WINDOW_SIZE.height); v++ {
-		//		PixelSet(pixels, pitch, u, v, 255, 0, 255, 0)
-		//	}
-		//}
+		for x := 0; x < int(MAIN_WINDOW_SIZE.width); x++ {
+			for y := 0; y < int(MAIN_WINDOW_SIZE.height); y++ {
+				inten := convert_pix_point_to_graph_pix_point(MAIN_WINDOW_SIZE, graph, vectorI{x, y})
+				g := inten.x - inten.y
+				if g > 255 {
+					g = 255
+				}
+				if g < 0 {
+					g = 0
+				}
+				PixelSet(pixels, pitch, x, y, byte(g), 0, 0, 0)
+			}
+		}
 		PixelSet(pixels, pitch, 0, 0, 255, 0, 255, 000)
 
 		tex.Update(nil, unsafe.Pointer(&pixels[0]), pitch)
