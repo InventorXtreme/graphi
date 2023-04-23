@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
+	"math"
 	"unsafe"
 )
 
@@ -35,6 +36,62 @@ type vectorI64 struct {
 type vectorI struct {
 	x int
 	y int
+}
+
+type D2float64 struct {
+	width  int
+	height int
+	data   [][]float64
+}
+
+func BuildD2float64(width, height int) D2float64 {
+	temparray := make([][]float64, width)
+	for i := range temparray {
+		temparray[i] = make([]float64, height)
+	}
+	return D2float64{width, height, temparray}
+}
+
+func GetMinOfFloat64Array(a []float64) float64 {
+	var m float64 = math.MaxFloat64
+	for _, e := range a {
+		if e < m {
+			m = e
+		}
+	}
+	return m
+}
+
+func (a D2float64) GetMinOfGraph() float64 {
+	var m float64 = math.MaxFloat64
+	for _, e := range a.data {
+		if GetMinOfFloat64Array(e) < m {
+			m = GetMinOfFloat64Array(e)
+		}
+	}
+
+	return m
+}
+
+func GetMaxOfFloat64Array(a []float64) float64 {
+	var m float64 = 0 - math.MaxFloat64
+	for _, e := range a {
+		if e > m {
+			m = e
+		}
+	}
+	return m
+}
+
+func (a D2float64) GetMaxOfGraph() float64 {
+	var m float64 = 0 - math.MaxFloat64
+	for _, e := range a.data {
+		if GetMaxOfFloat64Array(e) > m {
+			m = GetMaxOfFloat64Array(e)
+		}
+	}
+
+	return m
 }
 
 type graphobj struct {
@@ -103,19 +160,39 @@ func main() {
 		panic(err)
 	}
 	graph := graphobj{1, 0}
+	evalarea := BuildD2float64(int(MAIN_WINDOW_SIZE.width), int(MAIN_WINDOW_SIZE.height))
+	for x := 0; x < evalarea.width; x++ {
+		for y := 0; y < evalarea.height; y++ {
+			inten := convert_pix_point_to_graph_pix_point(MAIN_WINDOW_SIZE, graph, vectorI{x, y})
+			evalarea.data[x][y] = float64(math.Pow(float64(inten.x), 2) + math.Pow(float64(inten.y), 2) - 1)
 
+		}
+	}
+
+	evalareamax := evalarea.GetMaxOfGraph()
+	evalareamin := evalarea.GetMinOfGraph()
+
+	fmt.Println("evalarea max: ")
+	fmt.Println(evalareamax)
+	fmt.Println("evalarea min: ")
+	fmt.Println(evalareamin)
+	evalareamaxzeroadjusted := (-1 * evalareamin) + evalareamax
+
+	fmt.Println("evalarea maxadj")
+	fmt.Println(evalareamaxzeroadjusted)
 	for true {
 		for x := 0; x < int(MAIN_WINDOW_SIZE.width); x++ {
 			for y := 0; y < int(MAIN_WINDOW_SIZE.height); y++ {
-				inten := convert_pix_point_to_graph_pix_point(MAIN_WINDOW_SIZE, graph, vectorI{x, y})
-				g := inten.x - inten.y
-				if g > 255 {
-					g = 255
+				setval := evalarea.data[x][y]
+				t1 := setval + (-1 * (evalareamin))
+				t2 := t1 / evalareamaxzeroadjusted
+				if t2 > 1 {
+					fmt.Println(setval, t1, evalareamaxzeroadjusted, evalareamax, t2)
 				}
-				if g < 0 {
-					g = 0
-				}
-				PixelSet(pixels, pitch, x, y, byte(g), 0, 0, 0)
+				trueset := int64(255 * t2)
+
+				//fmt.Println(trueset)
+				PixelSet(pixels, pitch, x, y, byte(trueset), 0, 0, 0)
 			}
 		}
 		PixelSet(pixels, pitch, 0, 0, 255, 0, 255, 000)
