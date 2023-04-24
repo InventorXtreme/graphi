@@ -164,7 +164,7 @@ func main() {
 	for x := 0; x < evalarea.width; x++ {
 		for y := 0; y < evalarea.height; y++ {
 			inten := convert_pix_point_to_graph_pix_point(MAIN_WINDOW_SIZE, graph, vectorI{x, y})
-			evalarea.data[x][y] = float64(math.Pow(float64(inten.x), 2) + math.Pow(float64(inten.y), 2) - 1)
+			evalarea.data[x][y] = float64(inten.x-inten.y)
 
 		}
 	}
@@ -193,6 +193,12 @@ func main() {
 
 				//fmt.Println(trueset)
 				PixelSet(pixels, pitch, x, y, byte(trueset), 0, 0, 0)
+				if setval > 0 {
+					PixelSet(pixels, pitch, x, y, 0, 255, 0, 0)
+				}
+				if setval < 0 {
+					PixelSet(pixels, pitch, x, y, 0, 0, 255, 0)
+				}
 			}
 		}
 		PixelSet(pixels, pitch, 0, 0, 255, 0, 255, 000)
